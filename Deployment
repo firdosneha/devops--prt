@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-prt-deployment
+  labels:
+    app: devops-prt
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-prt
+  template:
+    metadata:
+      labels:
+        app: devops-prt
+    spec:
+      containers:
+      - name: devops-prt-container
+        image: devops-prt-image:latest   # Docker image built from Jenkins
+        ports:
+        - containerPort: 80
