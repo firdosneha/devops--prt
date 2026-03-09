@@ -1,0 +1,97 @@
+---
+# setup.yml - Final version
+
+- name: Configure DevOps environment - common setup
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Java (OpenJDK 17)
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+- name: Install Jenkins and Terraform on devops-master
+  hosts: masters
+  become: yes
+  tasks:
+
+    - name: Install prerequisites
+      apt:
+        name:
+          - curl
+          - unzip
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Download Jenkins .deb package
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/binary/jenkins_2.414.3_all.deb
+        dest: /tmp/jenkins.deb
+
+    - name: Install Jenkins from .deb package
+      apt:
+        deb: /tmp/jenkins.deb
+        state: present
+
+    - name: Start and enable Jenkins
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Download Terraform 1.5.7
+      get_url:
+        url: https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip
+        dest: /tmp/terraform.zip
+
+    - name: Unzip Terraform
+      unarchive:
+        src: /tmp/terraform.zip
+        dest: /usr/local/bin/
+        remote_src: yes
+
+- name: Install Docker on devops-agent
+  hosts: agents
+  become: yes
+  tasks:
+
+    - name: Install Docker prerequisites
+      apt:
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repo
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt cache after adding Docker repo
+      apt:
+        update_cache: yes
+
+    - name: Install Docker (latest stable)
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
